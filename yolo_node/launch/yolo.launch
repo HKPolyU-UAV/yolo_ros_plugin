@@ -1,0 +1,18 @@
+<launch>
+
+    <!-- ROS Nodelet manager -->
+    <node pkg="nodelet" type="nodelet" name="yolo_master" args="manager" output="screen">
+    </node> 
+    
+    <!-- CnnNodelet -->
+    <node pkg="nodelet" type="nodelet" name="cnn" args="load mission_control_center/CnnNodelet yolo_master" output="screen">
+        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/yolov4_best.weights"/>
+        <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4.cfg    "/>
+        <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/obj.names      "/>
+        <param name="/set_confidence" type="double" value = "0.1"/>
+        <rosparam command="load" file="$(find yolo_node)/launch/CNN_SUBPUB_topics.yaml" />
+    </node>
+
+
+</launch>
+
