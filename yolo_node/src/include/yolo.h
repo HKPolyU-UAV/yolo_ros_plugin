@@ -83,6 +83,8 @@ namespace mission_control_center{
             typedef message_filters::Synchronizer<MySyncPolicy> sync;//(MySyncPolicy(10), subimage, subdepth);
             boost::shared_ptr<sync> sync_;
 
+            ros::Subscriber rgb_sub;
+
             // cv::String cfg_file;
             // cv::String weights_file;
             // cv::String obj_file;
@@ -117,6 +119,10 @@ namespace mission_control_center{
                 const sensor_msgs::ImageConstPtr & depth
             );
 
+            void camera_image_callback(
+                const sensor_msgs::ImageConstPtr &rgbimage
+            );
+
             image_transport::Publisher pubimage;
 
             
@@ -139,10 +145,14 @@ namespace mission_control_center{
                 std::cout<<set_confidence<<std::endl;
 
                 //subscribe
-                subimage.subscribe(nh, configs.getTopicName(COLOR_SUB_TOPIC), 1);
-                subdepth.subscribe(nh, configs.getTopicName(DEPTH_SUB_TOPIC), 1);                
-                sync_.reset(new sync( MySyncPolicy(10), subimage, subdepth));            
-                sync_->registerCallback(boost::bind(&CnnNodelet::camera_callback, this, _1, _2));
+                // subimage.subscribe(nh, configs.getTopicName(COLOR_SUB_TOPIC), 1);
+                // subdepth.subscribe(nh, configs.getTopicName(DEPTH_SUB_TOPIC), 1);                
+                // sync_.reset(new sync( MySyncPolicy(10), subimage, subdepth));            
+                // sync_->registerCallback(boost::bind(&CnnNodelet::camera_callback, this, _1, _2));
+                rgb_sub = nh.subscribe<sensor_msgs::Image>
+                    (configs.getTopicName(COLOR_SUB_TOPIC), 1, &CnnNodelet::camera_image_callback, this);
+
+    // subimage = nh.subscribe("/camera/color/image_raw/compressed", 1, &ArucoNodelet::camera_callback, this);
 
                 image_transport::ImageTransport image_transport_(nh);
 

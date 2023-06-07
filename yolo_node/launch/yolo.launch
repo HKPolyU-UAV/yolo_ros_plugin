@@ -6,7 +6,7 @@
     
     <!-- CnnNodelet -->
     <node pkg="nodelet" type="nodelet" name="cnn" args="load mission_control_center/CnnNodelet yolo_master" output="screen">
-        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/yolov4_best.weights"/>
+        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/yolov4-poland_best.weights"/>
         <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4.cfg    "/>
         <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/obj.names      "/>
         <param name="/set_confidence" type="double" value = "0.1"/>

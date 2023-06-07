@@ -2,15 +2,14 @@ TOPICLIST:
 #led.cpp
   #sub
   - TOPICTYPE: "CAMERA_SUB_TOPIC_A"
-    # TOPICNAME: "/red/camera/color/image_raw"
-    TOPICNAME: "/camera/color/image_raw"
+    TOPICNAME: "/red/camera/color/image_raw"
+    # TOPICNAME: "/camera/color/image_raw"
     # TOPICNAME: "/camera/color/image_raw/compressed"
     SUBORPUB: 0
 
   - TOPICTYPE: "CAMERA_SUB_TOPIC_B"
-    TOPICNAME: "/camera/depth/image_rect_raw"
-    # /camera/depth/image_rect_raw
-    # TOPICNAME: "/camera/aligned_depth_to_color/image_raw"
+    # TOPICNAME: "/camera/depth/image_rect_raw"
+    TOPICNAME: "/red/camera/depth/image_rect_raw"
     SUBORPUB: 0
   
 # Remark: 

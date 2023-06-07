@@ -25,31 +25,15 @@
 
 #include "include/yolo.h"
 
-void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::ImageConstPtr & rgbimage, const sensor_msgs::ImageConstPtr & depth)
+void mission_control_center::CnnNodelet::camera_image_callback(const sensor_msgs::ImageConstPtr &rgbimage)
 {
-    if(intiated)
+     if(intiated)
     {
-        std::cout<<1<<std::endl;
         cv_bridge::CvImageConstPtr depth_ptr, rgb_ptr;
-        try
-        {
-            depth_ptr  = cv_bridge::toCvCopy(depth, depth->encoding);
-        }
-        catch (cv_bridge::Exception& e)
-        {
-            ROS_ERROR("cv_bridge exception: %s", e.what());
-            return;
-        }
-        cv::Mat image_dep = depth_ptr->image;
-
-        this->getdepthdata(image_dep);
-
-        std::cout<<2<<std::endl;
-
-        try
+         try
         {
             // this->frame = cv::imdecode(cv::Mat(rgbimage->data),1);
-            rgb_ptr  = cv_bridge::toCvCopy(rgbimage, rgbimage->encoding);
+            rgb_ptr  = cv_bridge::toCvCopy(rgbimage, sensor_msgs::image_encodings::BGR8);
             // res   = cv::imdecode(cv::Mat(rgbimage->data),1);
             // gt    = cv::imdecode(cv::Mat(rgbimage->data),1);
         }
@@ -59,6 +43,17 @@ void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::Imag
         }
 
         frame = rgb_ptr->image;
+
+        cv::imshow("haha",frame);
+        cv::waitKey(10);
+        
+        cv::Mat image_dep = cv::Mat::zeros(frame.rows, frame.cols, CV_64FC1);
+
+        this->getdepthdata(image_dep);
+
+        std::cout<<2<<std::endl;
+
+       
 
         std::cout<<3<<std::endl;
         
@@ -82,23 +77,6 @@ void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::Imag
             ROI = what.boundingbox;
         }
         
-        // cv::Mat test(frame.rows, frame.cols, CV_8UC3, CV_RGB(255, 255, 255));
-        
-        // cv::rectangle(test, ROI, CV_RGB(0, 0, 0), -1);
-
-        // // std::cout<<frame.type()<<std::endl;
-        // // std::cout<<test.type()<<std::endl;
-        // // std::cout<<frame.size()<<std::endl;
-        // // std::cout<<test.size()<<std::endl;
-
-        // cv::subtract(frame, test, frame);
-
-        // cv::Mat imageoutput = frame.clone();
-        // cv_bridge::CvImage for_visual;
-        // for_visual.header = rgbimage->header;
-        // for_visual.encoding = sensor_msgs::image_encodings::BGR8;
-        // for_visual.image = imageoutput;
-        // this->pubimage.publish(for_visual.toImageMsg());
         // ywy
         if(obj_vector.size() > 0){
 
@@ -135,6 +113,14 @@ void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::Imag
     }
     // display(this->frame);
     // cv::waitKey(10);
+
+    // ros::Duration(5.0).sleep();
+    // std::cout<<frame.size<<std::endl;
+
+}
+
+void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::ImageConstPtr & rgbimage, const sensor_msgs::ImageConstPtr & depth)
+{
 
     // ros::Duration(5.0).sleep();
     // std::cout<<frame.size<<std::endl;
