@@ -6,10 +6,11 @@
     
     <!-- CnnNodelet -->
     <node pkg="nodelet" type="nodelet" name="cnn" args="load mission_control_center/CnnNodelet yolo_master" output="screen">
-        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/yolov4-poland_best.weights"/>
+        <!-- <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/7june.weights"/> -->
+        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/8june.weights"/>
         <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4.cfg    "/>
         <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/obj.names      "/>
-        <param name="/set_confidence" type="double" value = "0.1"/>
+        <param name="/set_confidence" type="double" value = "0.5"/>
         <rosparam command="load" file="$(find yolo_node)/launch/CNN_SUBPUB_topics.yaml" />
     </node>
 

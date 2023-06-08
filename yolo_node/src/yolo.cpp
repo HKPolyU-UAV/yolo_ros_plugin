@@ -44,8 +44,8 @@ void mission_control_center::CnnNodelet::camera_image_callback(const sensor_msgs
 
         frame = rgb_ptr->image;
 
-        cv::imshow("haha",frame);
-        cv::waitKey(10);
+        // cv::imshow("haha",frame);
+        // cv::waitKey(10);
         
         cv::Mat image_dep = cv::Mat::zeros(frame.rows, frame.cols, CV_64FC1);
 
