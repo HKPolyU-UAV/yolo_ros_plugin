@@ -1,5 +1,5 @@
 <launch>
-
+    <!-- This launch file is particular for yolov4 opencv bundle -->
     <!-- ROS Nodelet manager -->
     <node pkg="nodelet" type="nodelet" name="yolo_master" args="manager" output="screen">
     </node> 
@@ -7,17 +7,23 @@
     <!-- CnnNodelet -->
     <node pkg="nodelet" type="nodelet" name="cnn" args="load mission_control_center/CnnNodelet yolo_master" output="screen">
         <!-- <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/7june.weights"/> -->
-        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/8june.weights"/>
-        <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4.cfg    "/>
-        <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/obj.names      "/>
+        <param name="/weightpath"    type="string" value="$(find yolo_node)/launch/yolo/yolov4-tiny-coco.weights"/>
+        <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4-tiny-coco.cfg    "/>
+        <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/coco.names      "/>
         <param name="/set_confidence" type="double" value = "0.5"/>
-        <param name="/input_type" type="int" value = "0"/>
+        <param name="/input_type" type="int" value = "3"/>
             <!-- input_type difference:
                 0 = rgb only
                 1 = rgb_compressed only
                 2 = rgb, depth aligned
-                3 = rgb_compressed, depth_compressed
+                3 = rgb_compressed, depth aligned 
+                    (I have done some research on depth_aligned compressed:
+                    seems that it is not wrll-supported, 
+                    hence, I would not suggest using that)
             -->
+        <param name="/CNN_size"       type="double" value="416"/>
+        <param name="/w_GPU"       type="bool" value="false"/>
+
         <rosparam command="load" file="$(find yolo_node)/launch/CNN_SUBPUB_topics.yaml" />
     </node>
 

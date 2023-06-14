@@ -26,17 +26,17 @@
 #include "include/yolo.h"
 
 void mission_control_center::CnnNodelet::color_image_raw_callback(
-    const sensor_msgs::ImageConstPtr &rgbimage
+    const sensor_msgs::ImageConstPtr &rgbmsg
 )
 {
     if(!initiated)
         return;
     
     // main process here:
-    cv_bridge::CvImageConstPtr depth_ptr, rgb_ptr;
-        try
+    cv_bridge::CvImageConstPtr rgb_ptr;
+    try
     {
-        rgb_ptr  = cv_bridge::toCvCopy(rgbimage, sensor_msgs::image_encodings::BGR8);
+        rgb_ptr  = cv_bridge::toCvCopy(rgbmsg, sensor_msgs::image_encodings::BGR8);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -45,35 +45,110 @@ void mission_control_center::CnnNodelet::color_image_raw_callback(
 
     frame = rgb_ptr->image;
     
-    std::cout<<frame.size()<<std::endl;
+    rundarknet(this->frame);  
+    set_image_to_publish();  
+}
 
-    char hz[40];
-    char fps[5] = " fps";
-    sprintf(hz, "%.2f", this->appro_fps);
-    strcat(hz, fps);
-    cv::putText(frame, hz, cv::Point(20,40), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
-
-    std::cout<<"hi here is the hz: "<<hz<<std::endl;
+void mission_control_center::CnnNodelet::color_image_compressed_callback(
+    const sensor_msgs::CompressedImageConstPtr &rgbmsg
+)
+{
+    if(!initiated)
+        return;
     
-    rundarknet(this->frame);
-    ROS_INFO("YOLO");
-
-    cv::Rect ROI;
-
-    for(auto what : obj_vector)
+    // main process here:
+    try
     {
-        ROI = what.boundingbox;
+        frame = cv::imdecode(cv::Mat(rgbmsg->data), 1);
     }
-        
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+    }
+
+    rundarknet(this->frame); 
+    set_image_to_publish();   
+}
+
+void mission_control_center::CnnNodelet::color_depth_image_raw_callback(
+    const sensor_msgs::ImageConstPtr & rgbmsg, 
+    const sensor_msgs::ImageConstPtr & depthmsg
+)
+{
+    cv_bridge::CvImageConstPtr depth_ptr;
+
+    try
+    {
+        depth_ptr  = cv_bridge::toCvCopy(depthmsg, depthmsg->encoding);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+
+    cv::Mat depth = depth_ptr->image;
+
+    cv_bridge::CvImageConstPtr rgb_ptr;
+    try
+    {
+        rgb_ptr  = cv_bridge::toCvCopy(rgbmsg, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+    }
+
+    frame = rgb_ptr->image;
+
+    getdepthdata(depth);
+    rundarknet(frame);
+    set_image_to_publish();
+}
+
+void mission_control_center::CnnNodelet::color_depth_image_compressed_callback(
+    const sensor_msgs::CompressedImageConstPtr & rgbmsg, 
+    const sensor_msgs::ImageConstPtr & depthmsg
+)
+{
+    cv_bridge::CvImageConstPtr depth_ptr;
+
+    try
+    {
+        depth_ptr  = cv_bridge::toCvCopy(depthmsg, depthmsg->encoding);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+        return;
+    }
+
+    cv::Mat depth = depth_ptr->image;
+
+    try
+    {
+        frame = cv::imdecode(cv::Mat(rgbmsg->data), 1);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+    }
+
+    getdepthdata(depth);
+    rundarknet(frame);
+    set_image_to_publish();
     
 }
 
-// void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::ImageConstPtr & rgbimage, const sensor_msgs::ImageConstPtr & depth)
-// {
+void mission_control_center::CnnNodelet::set_image_to_publish()
+{
+    cv_bridge::CvImage for_visual;
+    for_visual.header.stamp = ros::Time::now();
+    for_visual.encoding = sensor_msgs::image_encodings::BGR8;
+    for_visual.image = frame.clone();
+    this->pubimage.publish(for_visual.toImageMsg());
 
-//     // ros::Duration(5.0).sleep();
-//     // std::cout<<frame.size<<std::endl;
-// }
+}
 
 inline void mission_control_center::CnnNodelet::CnnNodeletInitiate(const cv::String cfgfile, const cv::String weightfile, const cv::String classnamepath)
 {
@@ -81,18 +156,21 @@ inline void mission_control_center::CnnNodelet::CnnNodeletInitiate(const cv::Str
     this->mydnn = cv::dnn::readNetFromDarknet(cfgfile, weightfile);
 
     //opt CUDA or notcc
-    // this->mydnn.setPreferableBackend(cv::dnn::DNN_BACKEND_DEFAULT);
-    // this->mydnn.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     
-    // ywy
-    last_pub_time_ = ros::Time::now().toSec();
+    if(w_GPU)
+    {
+        this->mydnn.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+        this->mydnn.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
+    }
+    else
+    {
+        this->mydnn.setPreferableBackend(cv::dnn::DNN_BACKEND_DEFAULT);
+        this->mydnn.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+    }
 
     initiated = true;
 
     std::cout<<"end   initiation..."<<std::endl;
-    
-    this->mydnn.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
-    this->mydnn.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
 
 }
 
@@ -109,7 +187,7 @@ void mission_control_center::CnnNodelet::rundarknet(cv::Mat &frame)
 void mission_control_center::CnnNodelet::display(cv::Mat frame)
 {
     cv::imshow("Yolo-ed", frame);
-    cv::waitKey(20);
+    cv::waitKey(10);
 }
 
 void mission_control_center::CnnNodelet::getdepthdata(cv::Mat depthdata)
@@ -122,13 +200,9 @@ void mission_control_center::CnnNodelet::findboundingboxes(cv::Mat &frame)
     cv::Mat blob;
     using namespace std;
 
-    cout<<frame.size<<endl;
-
-    cout<<1<<endl;
-    blob = cv::dnn::blobFromImage(frame, 0.00392, cv::Size(608, 608), cv::Scalar(), true, false);
+    blob = cv::dnn::blobFromImage(frame, 0.00392, cv::Size(CNN_size, CNN_size), cv::Scalar(), true, false);
     //    as the dnn::net function does not accept image from image, it only receive blob hence the above function, refer to teams/article/blob
 
-    cout<<2<<endl;
     mydnn.setInput(blob);
     //feed 4-D blob to darknet dnn
 
@@ -268,6 +342,7 @@ void mission_control_center::CnnNodelet::findwhichboundingboxrocks(std::vector<c
         {
             sprintf(temp_depth, "%.2f", -1.0);
             depthofboundingbox = -1.0;
+            
         }
             
 
@@ -277,6 +352,9 @@ void mission_control_center::CnnNodelet::findwhichboundingboxrocks(std::vector<c
 
         std::string textoutputonframe = detectedclass + ": " + temp_confidence + "%, "+ temp_depth + "m";
         cv::Scalar colorforbox(rand()&255, rand()&255, rand()&255);
+        
+        
+        
 
         cv::rectangle(frame, cv::Point(final_x, final_y), cv::Point(final_x+final_w, final_y+final_h), colorforbox,2);
         cv::putText(frame, textoutputonframe, cv::Point(final_x,final_y-10),cv::FONT_HERSHEY_COMPLEX_SMALL,1,CV_RGB(255,255,0));
@@ -286,6 +364,26 @@ void mission_control_center::CnnNodelet::findwhichboundingboxrocks(std::vector<c
         obj.depth = depthofboundingbox;
         obj.frame = frame;
         obj_vector.push_back(obj);
+    }
+
+    char hz[40];
+    char fps[5] = " fps";
+    sprintf(hz, "%.2f", this->appro_fps);
+    strcat(hz, fps);
+    cv::putText(frame, hz, cv::Point(20,40), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
+
+    std::string image_size_text = "image_size";
+    std::string image_size_put_on_frame = 
+        image_size_text + ": " 
+        + std::to_string(frame.rows)
+        + " X "
+        + std::to_string(frame.cols);
+    
+    cv::putText(frame, image_size_put_on_frame, cv::Point(20,80), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
+
+    if(input_type == 0 || input_type == 1)
+    {
+        cv::putText(frame, "no_depth!", cv::Point(20,120), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
     }
 
 }

@@ -78,14 +78,19 @@ namespace mission_control_center{
             cv::Mat frame;
             bool initiated = false;
 
-            double time_gap_ = 2.0;
-            double last_pub_time_ = 0;
+            
 
             message_filters::Subscriber<sensor_msgs::Image> subimage_raw;
             message_filters::Subscriber<sensor_msgs::Image> subdepth_raw;
-            typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
-            typedef message_filters::Synchronizer<MySyncPolicy> sync;
-            boost::shared_ptr<sync> sync_;
+            typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy_RAW;
+            typedef message_filters::Synchronizer<MySyncPolicy_RAW> sync_raw;
+            boost::shared_ptr<sync_raw> sync_raw_;
+
+            message_filters::Subscriber<sensor_msgs::CompressedImage> subimage_comp;
+            message_filters::Subscriber<sensor_msgs::Image> subdepth_comp;
+            typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::CompressedImage, sensor_msgs::Image> MySyncPolicy_COMP;
+            typedef message_filters::Synchronizer<MySyncPolicy_COMP> sync_comp;
+            boost::shared_ptr<sync_comp> sync_comp_;
 
             ros::Subscriber rgb_sub;
 
@@ -115,18 +120,32 @@ namespace mission_control_center{
             float appro_fps;
             std::vector<objectinfo> obj_vector;
 
-            void color_image_depth_callback(
-                const sensor_msgs::ImageConstPtr & rgbimage,
-                const sensor_msgs::ImageConstPtr & depth
-            );
 
             void color_image_raw_callback(
-                const sensor_msgs::ImageConstPtr &rgbimage
+                const sensor_msgs::ImageConstPtr &rgbmsg
             );
+
+            void color_image_compressed_callback(
+                const sensor_msgs::CompressedImageConstPtr &rgbmsg
+            );
+
+            void color_depth_image_raw_callback(
+                const sensor_msgs::ImageConstPtr & rgbmsg, 
+                const sensor_msgs::ImageConstPtr & depthmsg
+            );
+
+            void color_depth_image_compressed_callback(
+                const sensor_msgs::CompressedImageConstPtr & rgbmsg, 
+                const sensor_msgs::ImageConstPtr & depthmsg
+            );
+
+            void set_image_to_publish();
 
             image_transport::Publisher pubimage;
             
             int input_type = 100;
+            double CNN_size = 608;
+            bool w_GPU = false;
 
             
             virtual void onInit() 
@@ -140,6 +159,9 @@ namespace mission_control_center{
                 nh.getParam("/cnn/classnamepath", classnamepath);
                 nh.getParam("/cnn/set_confidence", set_confidence);
                 nh.getParam("/cnn/input_type", input_type);
+                nh.getParam("/cnn/CNN_size", CNN_size);
+                nh.getParam("/cnn/w_GPU", w_GPU);
+
 
                 CnnNodeletInitiate(cfgpath, weightpath, classnamepath);
 
@@ -158,22 +180,29 @@ namespace mission_control_center{
                     break;
                 case 1:
                 // only rgb_raw_compressed
-                    // rgb_sub = nh.subscribe<sensor_msgs::Image>
-                    // (configs.getTopicName(COLOR_COMP_SUB_TOPIC), 1, &CnnNodelet::camera_image_callback, this);
+                    std::cout<<configs.getTopicName(COLOR_COMP_SUB_TOPIC)<<std::endl;
+                    rgb_sub = nh.subscribe<sensor_msgs::CompressedImage>
+                    (configs.getTopicName(COLOR_COMP_SUB_TOPIC), 1, &CnnNodelet::color_image_compressed_callback, this);
                     break;
                 case 2:
-                    /* code */
+                // rgb_raw + depth_raw
+                    subimage_raw.subscribe(nh, configs.getTopicName(COLOR_RAW_SUB_TOPIC), 1);
+                    subdepth_raw.subscribe(nh, configs.getTopicName(DEPTH_RAW_SUB_TOPIC), 1);                
+                    sync_raw_.reset(new sync_raw( MySyncPolicy_RAW(10), subimage_raw, subdepth_raw));            
+                    sync_raw_->registerCallback(boost::bind(&CnnNodelet::color_depth_image_raw_callback, this, _1, _2));
+                
                     break;
                 case 3:
-                    /* code */
+                // rgb_compressed + depth_compressed
+                    subimage_comp.subscribe(nh, configs.getTopicName(COLOR_COMP_SUB_TOPIC), 1);
+                    subdepth_comp.subscribe(nh, configs.getTopicName(DEPTH_RAW_SUB_TOPIC), 1);                
+                    sync_comp_.reset(new sync_comp( MySyncPolicy_COMP(10), subimage_comp, subdepth_comp));            
+                    sync_comp_->registerCallback(boost::bind(&CnnNodelet::color_depth_image_compressed_callback, this, _1, _2));
+                
                     break;
                 default:
                     break;
                 }
-                // subimage_raw.subscribe(nh, configs.getTopicName(COLOR_SUB_TOPIC), 1);
-                // subdepth_raw.subscribe(nh, configs.getTopicName(DEPTH_SUB_TOPIC), 1);                
-                // sync_.reset(new sync( MySyncPolicy(10), subimage_raw, subdepth_raw));            
-                // sync_->registerCallback(boost::bind(&CnnNodelet::camera_callback, this, _1, _2));
                 
 
                 image_transport::ImageTransport image_transport_(nh);
