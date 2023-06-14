@@ -123,7 +123,7 @@ void mission_control_center::CnnNodelet::color_depth_image_compressed_callback(
         return;
     }
 
-    std::cout<<1<<std::endl;
+    // std::cout<<1<<std::endl;
 
     cv::Mat depth = depth_ptr->image;
 
