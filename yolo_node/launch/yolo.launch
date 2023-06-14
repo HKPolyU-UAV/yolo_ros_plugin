@@ -11,6 +11,13 @@
         <param name="/cfgpath"       type="string" value="$(find yolo_node)/launch/yolo/yolov4.cfg    "/>
         <param name="/classnamepath" type="string" value="$(find yolo_node)/launch/yolo/obj.names      "/>
         <param name="/set_confidence" type="double" value = "0.5"/>
+        <param name="/input_type" type="int" value = "0"/>
+            <!-- input_type difference:
+                0 = rgb only
+                1 = rgb_compressed only
+                2 = rgb, depth aligned
+                3 = rgb_compressed, depth_compressed
+            -->
         <rosparam command="load" file="$(find yolo_node)/launch/CNN_SUBPUB_topics.yaml" />
     </node>
 

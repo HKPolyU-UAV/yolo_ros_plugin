@@ -145,8 +145,6 @@
 #define ODOM_PUB_TOPIC_I "ODOM_PUB_TOPIC_I"
 #define ODOM_PUB_TOPIC_J "ODOM_PUB_TOPIC_J"
 
-
-
 struct CONFIG_SETUP{
     std::string topictypes;
     std::string topicnames;

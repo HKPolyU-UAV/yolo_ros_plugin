@@ -1,18 +1,18 @@
 ﻿/*
-    This file is part of ALan - the non-robocentric dynamic landing system for quadrotor
+    This file is for the famous YOLO object detection.
 
-    ALan is free software: you can redistribute it and/or modify
+    YOLO_ROS_PLUGIN is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    ALan is distributed in the hope that it will be useful,
+    YOLO_ROS_PLUGIN is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with ALan.  If not, see <http://www.gnu.org/licenses/>.
+    along with YOLO_ROS_PLUGIN.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
@@ -20,111 +20,60 @@
  * \date 01/07/2022
  * \author pattylo
  * \copyright (c) AIRO-LAB, RCUAS of Hong Kong Polytechnic University
- * \brief //legacy of AUTO (https://github.com/HKPolyU-UAV/AUTO) & previous 1st gen ALan (https://www.mdpi.com/1424-8220/22/1/404)
+ * \brief //legacy of AUTO (https://github.com/HKPolyU-UAV/AUTO) & previous 1st gen YOLO_ROS_PLUGIN (https://www.mdpi.com/1424-8220/22/1/404)
  */
 
 #include "include/yolo.h"
 
-void mission_control_center::CnnNodelet::camera_image_callback(const sensor_msgs::ImageConstPtr &rgbimage)
+void mission_control_center::CnnNodelet::color_image_raw_callback(
+    const sensor_msgs::ImageConstPtr &rgbimage
+)
 {
-     if(intiated)
+    if(!initiated)
+        return;
+    
+    // main process here:
+    cv_bridge::CvImageConstPtr depth_ptr, rgb_ptr;
+        try
     {
-        cv_bridge::CvImageConstPtr depth_ptr, rgb_ptr;
-         try
-        {
-            // this->frame = cv::imdecode(cv::Mat(rgbimage->data),1);
-            rgb_ptr  = cv_bridge::toCvCopy(rgbimage, sensor_msgs::image_encodings::BGR8);
-            // res   = cv::imdecode(cv::Mat(rgbimage->data),1);
-            // gt    = cv::imdecode(cv::Mat(rgbimage->data),1);
-        }
-        catch (cv_bridge::Exception& e)
-        {
-            ROS_ERROR("cv_bridge exception: %s", e.what());
-        }
-
-        frame = rgb_ptr->image;
-
-        // cv::imshow("haha",frame);
-        // cv::waitKey(10);
-        
-        cv::Mat image_dep = cv::Mat::zeros(frame.rows, frame.cols, CV_64FC1);
-
-        this->getdepthdata(image_dep);
-
-        std::cout<<2<<std::endl;
-
-       
-
-        std::cout<<3<<std::endl;
-        
-        // std::cout<<frame.size()<<std::endl;
-
-        char hz[40];
-        char fps[5] = " fps";
-        sprintf(hz, "%.2f", this->appro_fps);
-        strcat(hz, fps);
-        cv::putText(frame, hz, cv::Point(20,40), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
-        std::cout<<4<<std::endl;
-        std::cout<<"hi here is the hz: "<<hz<<std::endl;
-        
-        rundarknet(this->frame);
-        ROS_INFO("YOLO");
-
-        cv::Rect ROI;
-
-        for(auto what : obj_vector)
-        {
-            ROI = what.boundingbox;
-        }
-        
-        // ywy
-        if(obj_vector.size() > 0){
-
-            if (obj_vector[0].confidence < 30) {
-                std::cout << "the crack confidence is lower than 30%, discarded" << std::endl;
-                return;
-            }
-            
-            cv::Mat imageoutput = frame.clone();
-            cv_bridge::CvImage for_visual;
-            for_visual.header = rgbimage->header;
-            for_visual.encoding = sensor_msgs::image_encodings::BGR8;
-            for_visual.image = imageoutput;
-
-            double about_to_pub_time = ros::Time::now().toSec();
-
-            double time_gap_now = about_to_pub_time - last_pub_time_;
-            if (time_gap_now > time_gap_) {
-                this->pubimage.publish(for_visual.toImageMsg());  
-            } else {
-                std::cout << "the time gap between 2 frames are too small" << std::endl;
-                std::cout << "we are NOT going to pub this frame" << std::endl;
-            }
-            // /red/camera/depth/image_raw
-            // we need to subscribe this 
-
-            // this->pubimage.publish(for_visual.toImageMsg());  
-        } else {
-            std::cout << "there is no crack detected" << std::endl;
-        }
-        // ywy
-        
-        
+        rgb_ptr  = cv_bridge::toCvCopy(rgbimage, sensor_msgs::image_encodings::BGR8);
     }
-    // display(this->frame);
-    // cv::waitKey(10);
+    catch (cv_bridge::Exception& e)
+    {
+        ROS_ERROR("cv_bridge exception: %s", e.what());
+    }
 
-    // ros::Duration(5.0).sleep();
-    // std::cout<<frame.size<<std::endl;
+    frame = rgb_ptr->image;
+    
+    std::cout<<frame.size()<<std::endl;
 
+    char hz[40];
+    char fps[5] = " fps";
+    sprintf(hz, "%.2f", this->appro_fps);
+    strcat(hz, fps);
+    cv::putText(frame, hz, cv::Point(20,40), cv::FONT_HERSHEY_PLAIN, 1.6, CV_RGB(255,0,0));
+
+    std::cout<<"hi here is the hz: "<<hz<<std::endl;
+    
+    rundarknet(this->frame);
+    ROS_INFO("YOLO");
+
+    cv::Rect ROI;
+
+    for(auto what : obj_vector)
+    {
+        ROI = what.boundingbox;
+    }
+        
+    
 }
 
-void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::ImageConstPtr & rgbimage, const sensor_msgs::ImageConstPtr & depth)
-{
+// void mission_control_center::CnnNodelet::camera_callback(const sensor_msgs::ImageConstPtr & rgbimage, const sensor_msgs::ImageConstPtr & depth)
+// {
 
-    // ros::Duration(5.0).sleep();
-    // std::cout<<frame.size<<std::endl;
-}
+//     // ros::Duration(5.0).sleep();
+//     // std::cout<<frame.size<<std::endl;
+// }
 
 inline void mission_control_center::CnnNodelet::CnnNodeletInitiate(const cv::String cfgfile, const cv::String weightfile, const cv::String classnamepath)
 {
@@ -138,7 +87,7 @@ inline void mission_control_center::CnnNodelet::CnnNodeletInitiate(const cv::Str
     // ywy
     last_pub_time_ = ros::Time::now().toSec();
 
-    intiated = true;
+    initiated = true;
 
     std::cout<<"end   initiation..."<<std::endl;
     
@@ -159,8 +108,8 @@ void mission_control_center::CnnNodelet::rundarknet(cv::Mat &frame)
 
 void mission_control_center::CnnNodelet::display(cv::Mat frame)
 {
-    // cv::imshow("Yolo-ed", frame);
-    // cv::waitKey(20);
+    cv::imshow("Yolo-ed", frame);
+    cv::waitKey(20);
 }
 
 void mission_control_center::CnnNodelet::getdepthdata(cv::Mat depthdata)
@@ -267,52 +216,66 @@ void mission_control_center::CnnNodelet::findwhichboundingboxrocks(std::vector<c
         final_w = bboxes[index].width;
         final_h = bboxes[index].height;
         cv::Scalar color;
-
         cv::Point center = cv::Point(final_x+final_w/2, final_y+final_h/2);
-        int depthbox_w = final_w*0.25;
-        int depthbox_h = final_h*0.25;
 
-        cv::Point depthbox_vertice1 = cv::Point(center.x - depthbox_w/2, center.y - depthbox_h/2);
-        cv::Point depthbox_vertice2 = cv::Point(center.x + depthbox_w/2, center.y + depthbox_h/2);
-        cv::Rect letsgetdepth(depthbox_vertice1, depthbox_vertice2);
-
-        cv::Mat ROI(depthdata, letsgetdepth);
-        cv::Mat ROIframe;
-        ROI.copyTo(ROIframe);
-        std::vector<cv::Point> nonzeros;
-
-        cv::findNonZero(ROIframe, nonzeros);
-        std::vector<double> nonzerosvalue;
-        for(auto temp : nonzeros)
-        {
-            double depth = ROIframe.at<ushort>(temp);
-            nonzerosvalue.push_back(depth);
-        }
-
-        double depth_average;
-        if(nonzerosvalue.size()!=0)
-            depth_average = accumulate(nonzerosvalue.begin(), nonzerosvalue.end(),0.0)/nonzerosvalue.size();
-            // ywy
-            std::cout << "THE DEPTH IS " << depth_average << "!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;            
-
-
-        cv::Point getdepth(final_x+final_w/2, final_y+final_h/2);
-        double depthofboundingbox = 0.001 * depth_average;
-        int temp_iy = 0;
-
-
+        // confidence
         std::string detectedclass = classnames[classids[index]];
         float detectedconfidence = confidenceperbbox[index]*100;
-
-        char temp_depth[40];
-        sprintf(temp_depth, "%.2f", depthofboundingbox);
         char temp_confidence[40];
-        sprintf(temp_confidence, "%.2f", detectedconfidence);     
+        sprintf(temp_confidence, "%.2f", detectedconfidence);  
 
+
+        // depth info here
+        double depthofboundingbox = -INFINITY;
+        char temp_depth[40];
+
+        if(input_type == 2 || input_type == 3)
+        {
+            int depthbox_w = final_w*0.25;
+            int depthbox_h = final_h*0.25;
+
+            cv::Point depthbox_vertice1 = cv::Point(center.x - depthbox_w/2, center.y - depthbox_h/2);
+            cv::Point depthbox_vertice2 = cv::Point(center.x + depthbox_w/2, center.y + depthbox_h/2);
+            cv::Rect letsgetdepth(depthbox_vertice1, depthbox_vertice2);
+
+            cv::Mat ROI(depthdata, letsgetdepth);
+            cv::Mat ROIframe;
+            ROI.copyTo(ROIframe);
+            std::vector<cv::Point> nonzeros;
+
+            cv::findNonZero(ROIframe, nonzeros);
+            std::vector<double> nonzerosvalue;
+            for(auto temp : nonzeros)
+            {
+                double depth = ROIframe.at<ushort>(temp);
+                nonzerosvalue.push_back(depth);
+            }
+
+            double depth_average;
+            if(nonzerosvalue.size()!=0)
+                depth_average = accumulate(nonzerosvalue.begin(), nonzerosvalue.end(),0.0)/nonzerosvalue.size();
+                
+
+
+            cv::Point getdepth(final_x+final_w/2, final_y+final_h/2);
+            depthofboundingbox = 0.001 * depth_average;
+
+            
+            sprintf(temp_depth, "%.2f", depthofboundingbox);
+
+        }
+        else
+        {
+            sprintf(temp_depth, "%.2f", -1.0);
+            depthofboundingbox = -1.0;
+        }
+            
+
+           
+
+        // post-processing
 
         std::string textoutputonframe = detectedclass + ": " + temp_confidence + "%, "+ temp_depth + "m";
-
-
         cv::Scalar colorforbox(rand()&255, rand()&255, rand()&255);
 
         cv::rectangle(frame, cv::Point(final_x, final_y), cv::Point(final_x+final_w, final_y+final_h), colorforbox,2);
