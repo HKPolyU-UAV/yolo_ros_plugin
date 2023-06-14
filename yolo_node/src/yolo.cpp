@@ -25,6 +25,7 @@
 
 #include "include/yolo.h"
 //lala
+//lala
 
 void mission_control_center::CnnNodelet::color_image_raw_callback(
     const sensor_msgs::ImageConstPtr &rgbmsg
