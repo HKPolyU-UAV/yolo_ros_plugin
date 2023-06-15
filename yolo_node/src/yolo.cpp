@@ -1,5 +1,5 @@
 ﻿/*
-    This file is for the famous YOLO object detection.
+    This file is for the famous YOLO object detection executed in ROS.
 
     YOLO_ROS_PLUGIN is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,13 +20,11 @@
  * \date 01/07/2022
  * \author pattylo
  * \copyright (c) AIRO-LAB, RCUAS of Hong Kong Polytechnic University
- * \brief //legacy of AUTO (https://github.com/HKPolyU-UAV/AUTO) & previous 1st gen YOLO_ROS_PLUGIN (https://www.mdpi.com/1424-8220/22/1/404)
+ * \brief //legacy of AUTO (https://github.com/HKPolyU-UAV/AUTO) & previous 1st gen ALAN (https://www.mdpi.com/1424-8220/22/1/404)
  */
 
 #include "include/yolo.h"
-//lala
 
-//lala
 
 void mission_control_center::CnnNodelet::color_image_raw_callback(
     const sensor_msgs::ImageConstPtr &rgbmsg
@@ -142,6 +140,8 @@ void mission_control_center::CnnNodelet::color_depth_image_compressed_callback(
     getdepthdata(depth);
     rundarknet(frame);
     set_image_to_publish();
+
+    
     
 }
 
