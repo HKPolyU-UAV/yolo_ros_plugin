@@ -23,5 +23,19 @@ This is a YOLO ROS Plugin through usage of OpenCV, which can support ```sensor_m
  - Launch! You can do ```rqt_image_view``` and check  topic ```/showoff_this_dope_image```.
  - If you wish to do some further shit, in the [yolo.cpp](/yolo_node/src/yolo.cpp), do something with the object ```obj_vector``` after detection.
 
-## Yolov8 to be added.
-It's the year 2023, and Jesus mother of Christ, we have come all the way through Yolov8 since the first publication of You only look once. So a python version yolo-ros-plugin with v8 with soon be attached in this repo.
+## Yolov8
+It's the year 2023, and Jesus mother of Christ, we have come all the way through Yolov8 since the first publication of You only look once. So a python version yolo-ros-plugin with v8 is also attached in this repo.
+
+```
+pip install ultralytics
+```
+and run
+```
+roslaunch yolo_node yolov8.launch
+```
+
+We did not draw the bounding boxes for you, either saving those information in some random object. You might have to do something by yourself based on ```results = self.model(self.cv_image)[0]```.
+
+## Maintainer
+[pattylo](https://github.com/pattylo) @ AIRO-LAB @ RCUAS, HKPolyU
+

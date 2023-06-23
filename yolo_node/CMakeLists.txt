@@ -17,8 +17,12 @@ find_package(catkin COMPONENTS
   visualization_msgs
   pcl_conversions
   pcl_ros 
+  rospy
 
 )
+
+catkin_python_setup()
+
 
 find_package(OpenCV 4.4 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -36,11 +40,13 @@ catkin_package(
   #  INCLUDE_DIRS include
   #  LIBRARIES offb
   CATKIN_DEPENDS 
+  rospy
   geometry_msgs 
   mavros_msgs 
   roscpp
   std_msgs
   message_generation
+  
   #  DEPENDS system_lib
 )
 
@@ -48,6 +54,11 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+)
+
+catkin_install_python(PROGRAMS 
+  scripts/startup.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 add_library(mission_control_center

@@ -140,9 +140,6 @@ void mission_control_center::CnnNodelet::color_depth_image_compressed_callback(
     getdepthdata(depth);
     rundarknet(frame);
     set_image_to_publish();
-
-    
-    
 }
 
 void mission_control_center::CnnNodelet::set_image_to_publish()

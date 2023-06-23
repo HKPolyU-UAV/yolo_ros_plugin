@@ -1,0 +1,6 @@
+<launch> 
+    <node pkg="yolo_node" name="startup" type="startup.py" output="screen">
+        <param name="weight_path" type="string" value="$(find yolo_node)/launch/yolo/yolov8n.pt" />
+        <param name="input_type" type="int" value="3" />
+    </node>
+</launch>
