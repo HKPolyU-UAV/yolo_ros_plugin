@@ -17,7 +17,7 @@ This is a YOLO ROS Plugin through usage of OpenCV, which can support ```sensor_m
 2. Utilization:
 
  - Define your ros message topic at [here](/yolo_node/launch/CNN_SUBPUB_topics.yaml).
- - Define your config, weight, and name file at [here](/yolo_node//launch/yolo.launch). When you clone this repo, default should have Yolov4-tiny.
+ - Define your config, weight, and name file at [here](/yolo_node//launch/yolov4.launch). When you clone this repo, default should have Yolov4-tiny.
  - In the same launch file, define your input type (under para: input_type obviously - duh). It's your choice whether you need depth/compressed or not.
  - In the same launch file, define whether or not you are using GPU. We plan to write another tutorial on setting up GPU environs -- but not today.
  - Launch! You can do ```rqt_image_view``` and check  topic ```/showoff_this_dope_image```.
