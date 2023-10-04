@@ -34,7 +34,7 @@ and run
 roslaunch yolo_node yolov8.launch
 ```
 
-We did not draw the bounding boxes for you, either saving those information in some random object. You might have to do something by yourself based on ```results = self.model(self.cv_image)[0]```.
+We did not draw the bounding boxes for you, neither saving those information in some random object. You might have to do something by yourself based on ```results = self.model(self.cv_image)[0]```.
 
 ## Maintainer
 [pattylo](https://github.com/pattylo) @ AIRO-LAB @ RCUAS, HKPolyU
